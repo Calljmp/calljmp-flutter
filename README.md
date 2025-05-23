@@ -2,7 +2,7 @@
 
 **Secure backend-as-a-service for mobile developers. No API keys. Full SQLite control.**
 
-[![pub version](https://img.shields.io/pub/v/calljmp_flutter)](https://pub.dev/packages/calljmp_flutter)
+[![pub version](https://img.shields.io/pub/v/calljmp)](https://pub.dev/packages/calljmp)
 [![GitHub license](https://img.shields.io/github/license/Calljmp/calljmp-flutter)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-Compatible-blue)](https://flutter.dev/)
 
@@ -54,24 +54,17 @@ final calljmp = Calljmp();
 Authenticate a user with Calljmp:
 
 ```dart
-final auth = await calljmp.users.auth.email.authenticate(
-  email: 'test@email.com',
-  name: 'Tester',
-  password: 'password',
+final user = await calljmp.users.auth.email.authenticate(
+  email: "test@email.com",
+  name: "Tester",
+  password: "password",
   policy: UserAuthenticationPolicy.signInOrCreate,
-  tags: ['role:member'],
+  tags: ["role:member"],
 );
-
-if (auth.error != null) {
-  print(auth.error);
-  return;
-}
-
-final user = auth.data.user;
-print('Authenticated user: $user');
+developer.log("$user");
 ```
 
-### 3️⃣ Run Direct SQL Queries
+<!-- ### 3️⃣ Run Direct SQL Queries
 
 Access your SQLite database without restrictions:
 
@@ -125,7 +118,7 @@ if (result.error != null) {
 }
 
 print(result.data);
-```
+``` -->
 
 ## 🔒 Security & App Attestation
 
