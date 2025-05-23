@@ -1,3 +1,3 @@
-class Calculator {
-  int addOne(int value) => value + 1;
-}
+import 'calljmp_device_interface.dart';
+
+class Calljmp {}

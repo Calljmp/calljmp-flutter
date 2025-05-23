@@ -10,6 +10,13 @@
         "command": "flutter analyze",
         "cwd": "libs/sdk-flutter"
       }
+    },
+    "pod:lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pod lib lint calljmp.podspec",
+        "cwd": "libs/sdk-flutter/ios"
+      }
     }
   }
 }
