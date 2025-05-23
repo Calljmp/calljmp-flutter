@@ -13,6 +13,10 @@
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([@"securePut" isEqualToString:call.method]) {
     [self securePut:call result:result];
+  } else if ([@"secureGet" isEqualToString:call.method]) {
+    [self secureGet:call result:result];
+  } else if ([@"secureDelete" isEqualToString:call.method]) {
+    [self secureDelete:call result:result];
   } else {
     result(FlutterMethodNotImplemented);
   }

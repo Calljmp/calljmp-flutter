@@ -17,6 +17,19 @@
         "command": "pod lib lint calljmp.podspec",
         "cwd": "libs/sdk-flutter/ios"
       }
+    },
+    "publish:git": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "typecheck",
+        "pod:lint"
+      ],
+      "options": {
+        "cwd": "libs/sdk-flutter",
+        "commands": [
+          "./tools/git-publish.sh"
+        ]
+      }
     }
   }
 }

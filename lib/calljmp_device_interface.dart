@@ -2,23 +2,59 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'calljmp_device_method_channel.dart';
 
-class AttestationResult {
+class AppleAttestationResult {
   final String keyId;
   final String bundleId;
   final String attestation;
 
-  AttestationResult({
+  AppleAttestationResult({
     required this.keyId,
     required this.bundleId,
     required this.attestation,
   });
 
-  factory AttestationResult.fromJson(Map<String, dynamic> map) {
-    return AttestationResult(
-      keyId: map['keyId'] as String,
-      bundleId: map['bundleId'] as String,
-      attestation: map['attestation'] as String,
-    );
+  Map<String, dynamic> toJson() => {
+    'keyId': keyId,
+    'bundleId': bundleId,
+    'attestation': attestation,
+  };
+
+  factory AppleAttestationResult.fromJson(Map<String, dynamic> json) =>
+      AppleAttestationResult(
+        keyId: json['keyId'],
+        bundleId: json['bundleId'],
+        attestation: json['attestation'],
+      );
+
+  @override
+  String toString() {
+    return 'AppleAttestationResult(keyId: $keyId, bundleId: $bundleId, attestation: $attestation)';
+  }
+}
+
+class AndroidIntegrityResult {
+  final String integrityToken;
+  final String packageName;
+
+  AndroidIntegrityResult({
+    required this.integrityToken,
+    required this.packageName,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'integrityToken': integrityToken,
+    'packageName': packageName,
+  };
+
+  factory AndroidIntegrityResult.fromJson(Map<String, dynamic> json) =>
+      AndroidIntegrityResult(
+        integrityToken: json['integrityToken'],
+        packageName: json['packageName'],
+      );
+
+  @override
+  String toString() {
+    return 'AndroidIntegrityResult(integrityToken: $integrityToken, packageName: $packageName)';
   }
 }
 
@@ -43,13 +79,22 @@ abstract class CalljmpDevice extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String> generateAttestationKey() {
+  Future<String> appleGenerateAttestationKey() {
     throw UnimplementedError(
-      'generateAttestationKey() has not been implemented.',
+      'appleGenerateAttestationKey() has not been implemented.',
     );
   }
 
-  Future<AttestationResult> attest(String keyId, String data) {
-    throw UnimplementedError('attest() has not been implemented.');
+  Future<AppleAttestationResult> appleAttestKey(String keyId, String data) {
+    throw UnimplementedError('appleAttestKey() has not been implemented.');
+  }
+
+  Future<AndroidIntegrityResult> androidRequestIntegrityToken(
+    int? cloudProjectNumber,
+    String data,
+  ) {
+    throw UnimplementedError(
+      'androidRequestIntegrityToken() has not been implemented.',
+    );
   }
 }

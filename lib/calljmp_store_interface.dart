@@ -2,6 +2,8 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'calljmp_store_method_channel.dart';
 
+enum CalljmpStoreKey { accessToken }
+
 abstract class CalljmpStore extends PlatformInterface {
   /// Constructs a CalljmpPlatform.
   CalljmpStore() : super(token: _token);
@@ -23,15 +25,15 @@ abstract class CalljmpStore extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> secureGet(String keyId) {
-    throw UnimplementedError('secureGet() has not been implemented.');
+  Future<String?> get(CalljmpStoreKey key) {
+    throw UnimplementedError('get() has not been implemented.');
   }
 
-  Future<void> securePut(String keyId, String value) {
-    throw UnimplementedError('securePut() has not been implemented.');
+  Future<void> put(CalljmpStoreKey key, String value) {
+    throw UnimplementedError('put() has not been implemented.');
   }
 
-  Future<void> secureDelete(String keyId) {
-    throw UnimplementedError('secureDelete() has not been implemented.');
+  Future<void> delete(CalljmpStoreKey key) {
+    throw UnimplementedError('delete() has not been implemented.');
   }
 }

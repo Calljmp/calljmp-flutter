@@ -1,3 +1,1 @@
-import 'calljmp_device_interface.dart';
-
-class Calljmp {}
+export 'client.dart' show Calljmp;

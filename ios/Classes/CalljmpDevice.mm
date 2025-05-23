@@ -26,9 +26,9 @@
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-  if ([@"generateAttestationKey" isEqualToString:call.method]) {
+  if ([@"appleGenerateAttestationKey" isEqualToString:call.method]) {
     [self generateAttestationKey:call result:result];
-  } else if ([@"attestKey" isEqualToString:call.method]) {
+  } else if ([@"appleAttestKey" isEqualToString:call.method]) {
     [self attestKey:call result:result];
   } else {
     result(FlutterMethodNotImplemented);

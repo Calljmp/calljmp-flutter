@@ -37,7 +37,7 @@ class CalljmpDevice private constructor(
 
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
-            "requestIntegrityToken" -> requestIntegrityToken(call, result)
+            "androidRequestIntegrityToken" -> requestIntegrityToken(call, result)
             else -> result.notImplemented()
         }
     }
