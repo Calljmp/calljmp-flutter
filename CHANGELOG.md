@@ -1,3 +1,9 @@
+## 0.0.2
+
+- **Documentation & Package Improvements**
+  - Enhanced package description and metadata
+  - Improved code formatting and documentation
+
 ## 0.0.1
 
 - **Initial release** of Calljmp Flutter SDK - Secure backend-as-a-service for mobile developers
