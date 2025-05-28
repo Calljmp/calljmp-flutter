@@ -102,7 +102,7 @@ class HttpRequest {
     _url = _url.replace(
       queryParameters: Map<String, dynamic>.from(_url.queryParameters)
         ..addAll(params.map((key, value) => MapEntry(key, value.toString()))),
-    ); 
+    );
     return this;
   }
 
