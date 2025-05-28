@@ -27,7 +27,7 @@
       "options": {
         "cwd": "libs/sdk-flutter",
         "commands": [
-          "./tools/git-publish.sh"
+          "./tool/git-publish.sh"
         ]
       }
     },
