@@ -67,8 +67,7 @@ class Integrity {
     final result = await http
         .request("${_config.serviceUrl}/integrity/access")
         .use(http.context(_config))
-        .json({"token": challengeToken, "attestationToken": attestationToken})
-        .post()
+        .post({"token": challengeToken, "attestationToken": attestationToken})
         .json((json) => (accessToken: json["accessToken"] as String));
 
     await CalljmpStore.instance.put(

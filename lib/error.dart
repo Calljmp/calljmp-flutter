@@ -75,8 +75,4 @@ class ServiceError implements Exception {
 
   @override
   String toString() => 'ServiceError($message, code: ${code.value})';
-
-  void throwError() {
-    throw this;
-  }
 }
