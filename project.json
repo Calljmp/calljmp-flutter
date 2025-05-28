@@ -41,7 +41,8 @@
         "cwd": "libs/sdk-flutter",
         "commands": [
           "dart pub publish"
-        ]
+        ],
+        "parallel": false
       }
     }
   }
