@@ -6,10 +6,10 @@ class Database {
 
   Database(this._config);
 
-  Future<({int? insertId, int? numAffectedRows, List<dynamic> rows})> query(
-    String sql, [
+  Future<({int? insertId, int? numAffectedRows, List<dynamic> rows})> query({
+    required String sql,
     List<dynamic>? params,
-  ]) => http
+  }) => http
       .request("${_config.serviceUrl}/database/query")
       .use(http.context(_config))
       .use(http.access())

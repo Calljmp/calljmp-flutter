@@ -30,6 +30,19 @@
           "./tools/git-publish.sh"
         ]
       }
+    },
+    "publish:pubdev": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "typecheck",
+        "pod:lint"
+      ],
+      "options": {
+        "cwd": "libs/sdk-flutter",
+        "commands": [
+          "dart pub publish"
+        ]
+      }
     }
   }
 }

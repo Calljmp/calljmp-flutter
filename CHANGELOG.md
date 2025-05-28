@@ -1,3 +1,37 @@
 ## 0.0.1
 
-* TODO: Describe initial release.
+- **Initial release** of Calljmp Flutter SDK - Secure backend-as-a-service for mobile developers
+- **Authentication System**
+  - Email/password authentication with `calljmp.users.auth.email.authenticate()`
+  - Support for user creation and sign-in policies
+  - User tagging system for roles and permissions
+  - User retrieval functionality with `calljmp.users.retrieve()`
+- **Security & App Attestation**
+  - App Attestation support for iOS devices
+  - Play Integrity API support for Android devices
+  - No API keys required - attestation-based security model
+  - Integrity verification with `calljmp.integrity.access()` and `calljmp.integrity.authenticated()`
+- **Database Access**
+  - Full SQLite database control with raw SQL queries
+  - Execute any SQL statement with `calljmp.database.query()`
+  - Support for parameterized queries for security
+  - No database restrictions or limitations
+- **Custom Service Integration**
+  - HTTP client for custom service endpoints
+  - Fluent API with `calljmp.service.request().get().json()`
+  - Support for custom backend deployments
+- **Storage Management**
+  - File upload functionality with `calljmp.storage.upload()`
+  - File retrieval with `calljmp.storage.retrieve()`
+  - File metadata updates with `calljmp.storage.update()`
+  - File deletion with `calljmp.storage.delete()`
+  - Support for buckets, content types, descriptions, and tags
+- **Project Management**
+  - Project connection handling with `calljmp.project.connect()`
+  - Development mode support for local testing
+  - Configurable service endpoints
+- **Flutter Integration**
+  - Native Flutter SDK with async/await support
+  - Type-safe API responses
+  - Comprehensive error handling
+  - Easy installation via pub.dev

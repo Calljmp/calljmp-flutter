@@ -1,7 +1,8 @@
 name: calljmp
 description: 'Calljmp SDK for Flutter'
 version: 0.0.1
-homepage:
+homepage: https://calljmp.com
+repository: https://github.com/Calljmp/calljmp-flutter
 
 environment:
   sdk: ^3.8.0

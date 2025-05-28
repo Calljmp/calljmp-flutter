@@ -61,25 +61,20 @@ final user = await calljmp.users.auth.email.authenticate(
   policy: UserAuthenticationPolicy.signInOrCreate,
   tags: ["role:member"],
 );
-developer.log("$user");
+
+print(user);
 ```
 
-<!-- ### 3️⃣ Run Direct SQL Queries
+### 3️⃣ Run Direct SQL Queries
 
 Access your SQLite database without restrictions:
 
 ```dart
 final result = await calljmp.database.query(
   sql: 'SELECT id, email, auth_provider, provider_user_id, tags, created_at FROM users',
-  params: [],
 );
 
-if (result.error != null) {
-  print(result.error);
-  return;
-}
-
-print(result.data);
+print(result);
 ```
 
 ### 4️⃣ Access service
@@ -107,18 +102,13 @@ Then in your Flutter app, you can call the service like this:
 ```dart
 // ./lib/main.dart
 
-final result = await calljmp.service
-    .request('/hello')
-    .get()
-    .json<Map<String, dynamic>>();
+ final message = await calljmp.service
+  .request(route: "/hello")
+  .get()
+  .json((json) => json['message'] as String);
 
-if (result.error != null) {
-  print(result.error);
-  return;
-}
-
-print(result.data);
-``` -->
+print(message);
+```
 
 ## 🔒 Security & App Attestation
 
