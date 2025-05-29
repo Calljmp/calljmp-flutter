@@ -102,7 +102,7 @@ Then in your Flutter app, you can call the service like this:
 ```dart
 // ./lib/main.dart
 
- final message = await calljmp.service
+final message = await calljmp.service
   .request(route: "/hello")
   .get()
   .json((json) => json['message'] as String);
