@@ -1,3 +1,9 @@
+## 0.0.3
+
+- **Bug Fixes & Improvements**
+  - Extended storage functionality
+  - Updated documentation for better clarity
+
 ## 0.0.2
 
 - **Documentation & Package Improvements**
