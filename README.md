@@ -12,6 +12,7 @@ Calljmp is a **secure backend designed for mobile developers**, providing:
 
 - ✅ **Authentication** via **App Attestation (iOS)** and **Play Integrity (Android)**
 - ✅ **Full SQLite database access** (no restrictions, run raw SQL)
+- ✅ **Secure file storage** with organized bucket management
 - ✅ **Dynamic permissions** for users & roles
 - ✅ **Flutter SDK** for seamless integration
 
@@ -77,7 +78,96 @@ final result = await calljmp.database.query(
 print(result);
 ```
 
-### 4️⃣ Access service
+### 4️⃣ File Storage & Management
+
+Calljmp provides secure cloud storage for your files with organized bucket management. Upload, download, and manage files with metadata, tags, and access controls.
+
+```dart
+// Upload a file from bytes
+final file = await calljmp.storage.upload(
+  content: imageBytes,
+  contentType: MediaType('image', 'jpeg'),
+  bucketId: 'user-uploads',
+  key: 'profile/avatar.jpg',
+  description: 'User profile picture',
+  tags: ['profile', 'avatar'],
+);
+
+// Upload from file path
+final document = await calljmp.storage.upload(
+  filePath: '/path/to/document.pdf',
+  bucketId: 'documents',
+  key: 'contracts/agreement.pdf',
+  tags: ['legal', 'contract'],
+);
+
+// Upload text content
+final textFile = await calljmp.storage.upload(
+  content: 'Hello, world!',
+  contentType: MediaType('text', 'plain'),
+  bucketId: 'text-files',
+  key: 'messages/hello.txt',
+);
+```
+
+#### List Files in a Bucket
+
+```dart
+final result = await calljmp.storage.list(
+  bucketId: 'user-uploads',
+  limit: 50,
+  offset: 0,
+  orderField: 'createdAt',
+  orderDirection: 'desc',
+);
+
+print('Found ${result.files.length} files');
+for (final file in result.files) {
+  print('${file.key}: ${file.size} bytes, created ${file.createdAt}');
+}
+```
+
+#### Download Files
+
+```dart
+// Get file metadata without downloading content
+final fileInfo = await calljmp.storage.peek(
+  bucketId: 'user-uploads',
+  key: 'profile/avatar.jpg',
+);
+print('File size: ${fileInfo.size} bytes');
+
+// Download file content
+final stream = await calljmp.storage.retrieve(
+  bucketId: 'user-uploads',
+  key: 'profile/avatar.jpg',
+);
+
+// Convert to bytes for processing
+final bytes = await stream.toBytes();
+```
+
+#### Update File Metadata
+
+```dart
+final updatedFile = await calljmp.storage.update(
+  bucketId: 'user-uploads',
+  key: 'profile/avatar.jpg',
+  description: 'Updated profile picture',
+  tags: ['profile', 'avatar', 'updated'],
+);
+```
+
+#### Delete Files
+
+```dart
+await calljmp.storage.delete(
+  bucketId: 'user-uploads',
+  key: 'profile/avatar.jpg',
+);
+```
+
+### 5️⃣ Access service
 
 If you are deploying your own service, you can access it via the `service` property.
 

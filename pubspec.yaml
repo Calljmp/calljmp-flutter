@@ -1,6 +1,6 @@
 name: calljmp
 description: 'Calljmp is a secure backend-as-a-service (BaaS) for Flutter apps, with auth, storage, SQL access, and attestation support.'
-version: 0.0.3
+version: 0.0.4
 homepage: https://calljmp.com
 repository: https://github.com/Calljmp/calljmp-flutter
 
@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   http: ^1.4.0
   http_parser: ^4.0.0
+  crypto: ^3.0.6
   plugin_platform_interface: ^2.0.2
 
 dev_dependencies:

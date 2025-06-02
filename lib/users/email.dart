@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:calljmp/access.dart';
+import 'package:crypto/crypto.dart';
 import 'package:calljmp/attestation.dart';
 import 'package:calljmp/calljmp_store_interface.dart';
 import 'package:calljmp/config.dart';
@@ -56,38 +56,6 @@ class Email {
   /// - [_attestation]: The attestation service for device verification
   /// - [_auth]: The parent Auth instance for accessing authentication utilities
   Email(this._config, this._attestation, this._auth);
-
-  /// Checks if the user is currently authenticated (access token is valid).
-  ///
-  /// This method verifies whether there is a valid access token stored locally
-  /// and whether that token has not expired. It does not make a network request
-  /// to verify the token with the server.
-  ///
-  /// ## Returns
-  ///
-  /// A Future that resolves to true if the user is authenticated with a valid token,
-  /// false otherwise
-  ///
-  /// ## Example
-  ///
-  /// ```dart
-  /// final isAuthenticated = await calljmp.users.auth.email.authenticated();
-  /// if (isAuthenticated) {
-  ///   print('User is already signed in');
-  /// } else {
-  ///   print('User needs to authenticate');
-  /// }
-  /// ```
-  Future<bool> authenticated() async {
-    final token = await CalljmpStore.instance.get(CalljmpStoreKey.accessToken);
-    if (token != null) {
-      final result = AccessToken.tryParse(token);
-      if (result.data != null) {
-        return result.data!.isValid;
-      }
-    }
-    return false;
-  }
 
   /// Initiates email verification for authentication.
   ///
@@ -336,8 +304,11 @@ class Email {
       challengeToken = result.challengeToken;
     }
 
+    final attestationHash = base64.encode(
+      sha256.convert(utf8.encode("$email:$challengeToken")).bytes,
+    );
     final attest = await _attestation
-        .attest({"token": challengeToken})
+        .attest({"hash": attestationHash})
         .catchError((error) {
           developer.log(
             "Failed to attest, this is fatal error unless it is in debug mode",
@@ -356,12 +327,12 @@ class Email {
           "token": challengeToken,
           "attestationToken": attestationToken,
           "email": email,
-          "emailVerified": emailVerified,
-          "name": name,
           "password": password,
-          "tags": tags,
-          "policy": policy?.value,
-          "doNotNotify": doNotNotify,
+          if (emailVerified != null) "emailVerified": emailVerified,
+          if (name != null) "name": name,
+          if (tags != null) "tags": tags,
+          if (policy != null) "policy": policy.value,
+          "doNotNotify": doNotNotify ?? false,
         })
         .json(
           (json) => (

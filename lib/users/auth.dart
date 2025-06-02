@@ -1,8 +1,10 @@
+import 'package:calljmp/access.dart';
 import 'package:calljmp/attestation.dart';
 import 'package:calljmp/calljmp_store_interface.dart';
 import 'package:calljmp/config.dart';
 import 'package:calljmp/http.dart' as http;
 import 'package:calljmp/users/email.dart';
+import 'package:calljmp/users/provider.dart';
 
 /// Enum representing supported email authentication providers.
 ///
@@ -27,6 +29,16 @@ enum UserAuthenticationProvider {
   /// Passwordless authentication where users receive a temporary
   /// numeric code via email that they enter to sign in.
   emailOneTimeCode,
+
+  /// Apple authentication.
+  ///
+  /// Sign in with Apple allows users to authenticate using their Apple ID.
+  apple,
+
+  /// Google authentication.
+  ///
+  /// Sign in with Google allows users to authenticate using their Google account.
+  google,
 }
 
 /// Extension to get string value for [UserAuthenticationProvider].
@@ -46,6 +58,10 @@ extension UserAuthenticationProviderExtension on UserAuthenticationProvider {
         return "email_magic_link";
       case UserAuthenticationProvider.emailOneTimeCode:
         return "email_one_time_code";
+      case UserAuthenticationProvider.apple:
+        return "apple";
+      case UserAuthenticationProvider.google:
+        return "google";
     }
   }
 }
@@ -132,6 +148,20 @@ class Auth {
   /// password authentication, magic links, and one-time codes.
   late final Email email;
 
+  /// Apple authentication provider.
+  ///
+  /// Provides methods for authenticating users via their Apple ID.
+  ///
+  /// This provider allows users to sign in using their Apple account,
+  /// leveraging Apple's secure authentication mechanisms.
+  late final Provider apple;
+
+  /// Google authentication provider.
+  ///
+  /// Provides methods for authenticating users via their Google account,
+  /// leveraging Google's secure authentication mechanisms.
+  late final Provider google;
+
   /// Constructs [Auth] with [config] and [attestation].
   ///
   /// This constructor is typically called internally by the Users class
@@ -143,6 +173,50 @@ class Auth {
   /// - [attestation]: The attestation service for device verification
   Auth(this._config, Attestation attestation) {
     email = Email(_config, attestation, this);
+    apple = Provider(
+      UserAuthenticationProvider.apple,
+      _config,
+      attestation,
+      this,
+    );
+    google = Provider(
+      UserAuthenticationProvider.google,
+      _config,
+      attestation,
+      this,
+    );
+  }
+
+  /// Checks if the user is currently authenticated (access token is valid).
+  ///
+  /// This method verifies whether there is a valid access token stored locally
+  /// and whether that token has not expired. It does not make a network request
+  /// to verify the token with the server.
+  ///
+  /// ## Returns
+  ///
+  /// A Future that resolves to true if the user is authenticated with a valid token,
+  /// false otherwise
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// final isAuthenticated = await calljmp.users.auth.email.authenticated();
+  /// if (isAuthenticated) {
+  ///   print('User is already signed in');
+  /// } else {
+  ///   print('User needs to authenticate');
+  /// }
+  /// ```
+  Future<bool> authenticated() async {
+    final token = await CalljmpStore.instance.get(CalljmpStoreKey.accessToken);
+    if (token != null) {
+      final result = AccessToken.tryParse(token);
+      if (result.data != null) {
+        return result.data!.isValid;
+      }
+    }
+    return false;
   }
 
   /// Requests a new authentication challenge token.
