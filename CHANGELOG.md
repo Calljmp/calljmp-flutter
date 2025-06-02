@@ -1,3 +1,9 @@
+## 0.0.4
+
+- **Apple and Google Authentication**
+  - Added support for Apple and Google authentication
+  - New methods: `calljmp.users.auth.apple.authenticate()` and `calljmp.users.auth.google.authenticate()`
+
 ## 0.0.3
 
 - **Bug Fixes & Improvements**
