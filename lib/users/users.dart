@@ -231,4 +231,51 @@ class Users {
       .use(http.access())
       .get()
       .json((json) => User.fromJson(json));
+
+  /// Updates the current user's profile information.
+  ///
+  /// This method allows updating the user's name, avatar URL, and tags.
+  /// It can be used to modify the user's display name, profile picture,
+  /// or role-based tags.
+  ///
+  /// ## Parameters
+  ///
+  /// - [name]: The new display name for the user (optional)
+  /// - [avatar]: The new avatar URL for the user (optional)
+  /// - [tags]: A list of new tags to assign to the user (optional)
+  ///
+  /// ## Returns
+  ///
+  /// A Future that resolves to the updated User object
+  ///
+  /// ## Throws
+  ///
+  /// - [CalljmpException] if the user is not authenticated
+  /// - [HttpException] if there's a network error
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// try {
+  ///   final updatedUser = await calljmp.users.update(
+  ///     name: 'Jane Doe',
+  ///     avatar: 'https://example.com/new-avatar.jpg',
+  ///     tags: ['role:admin'],
+  ///   );
+  ///   print('User updated: ${updatedUser.name} (${updatedUser.avatar})');
+  /// } catch (e) {
+  ///   print('Failed to update user: $e');
+  /// }
+  /// ```
+  Future<User> update({String? name, String? avatar, List<String>? tags}) =>
+      http
+          .request("${_config.serviceUrl}/users")
+          .use(http.context(_config))
+          .use(http.access())
+          .put({
+            if (name != null) 'name': name,
+            if (avatar != null) 'avatar': avatar,
+            if (tags != null) 'tags': tags,
+          })
+          .json((json) => User.fromJson(json));
 }
