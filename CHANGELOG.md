@@ -1,3 +1,8 @@
+## 0.0.5
+
+- **Storage Enhancements**
+  - Updated storage parameters to remove uuid.
+
 ## 0.0.4
 
 - **Apple and Google Authentication**
