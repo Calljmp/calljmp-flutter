@@ -15,8 +15,7 @@ import 'package:http_parser/http_parser.dart';
 /// ```dart
 /// final bucket = Bucket(
 ///   id: 123,
-///   uuid: 'bucket-uuid-123',
-///   name: 'user-uploads',
+///   name: 'media',
 ///   description: 'User uploaded files',
 ///   createdAt: DateTime.now(),
 /// );
@@ -25,13 +24,7 @@ class Bucket {
   /// The unique numeric identifier for this bucket.
   final int id;
 
-  /// The UUID string identifier for this bucket.
-  ///
-  /// This is a globally unique identifier that can be used
-  /// for referencing the bucket in API calls.
-  final String uuid;
-
-  /// The human-readable name of the bucket.
+  /// The name of the bucket.
   final String name;
 
   /// Optional description of the bucket's purpose.
@@ -45,13 +38,11 @@ class Bucket {
   /// ## Parameters
   ///
   /// - [id]: The unique numeric identifier
-  /// - [uuid]: The UUID string identifier
   /// - [name]: The bucket name
   /// - [description]: Optional description
   /// - [createdAt]: Creation timestamp
   Bucket({
     required this.id,
-    required this.uuid,
     required this.name,
     this.description,
     required this.createdAt,
@@ -71,7 +62,6 @@ class Bucket {
   factory Bucket.fromJson(Map<String, dynamic> json) {
     return Bucket(
       id: json['id'] as int,
-      uuid: json['uuid'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -86,7 +76,6 @@ class Bucket {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'uuid': uuid,
       'name': name,
       'description': description,
       'createdAt': createdAt.toIso8601String(),
@@ -96,7 +85,7 @@ class Bucket {
   /// Returns a string representation of this Bucket instance.
   @override
   String toString() {
-    return 'Bucket{id: $id, uuid: $uuid, name: $name, description: $description, createdAt: $createdAt}';
+    return 'Bucket{id: $id, name: $name, description: $description, createdAt: $createdAt}';
   }
 }
 
@@ -239,7 +228,7 @@ class BucketFile {
 /// final file = await calljmp.storage.upload(
 ///   content: fileBytes,
 ///   contentType: MediaType('image', 'jpeg'),
-///   bucketId: 'user-uploads',
+///   bucket: 'user-uploads',
 ///   key: 'profile/avatar.jpg',
 ///   description: 'User profile picture',
 ///   tags: ['profile', 'avatar'],
@@ -248,14 +237,14 @@ class BucketFile {
 /// // Upload from file path
 /// final document = await calljmp.storage.upload(
 ///   filePath: '/path/to/document.pdf',
-///   bucketId: 'documents',
+///   bucket: 'documents',
 ///   key: 'contracts/agreement.pdf',
 ///   tags: ['legal', 'contract'],
 /// );
 ///
 /// // Download a file
 /// final fileData = await calljmp.storage.download(
-///   bucketId: 'user-uploads',
+///   bucket: 'user-uploads',
 ///   key: 'profile/avatar.jpg',
 /// );
 /// ```
@@ -283,7 +272,7 @@ class Storage {
   /// - [content]: The file content as bytes or string (optional if filePath provided)
   /// - [filePath]: Path to the file to upload (optional if content provided)
   /// - [contentType]: MIME type of the content
-  /// - [bucketId]: ID of the target bucket (required)
+  /// - [bucket]: Name of the target bucket (required)
   /// - [key]: Unique key/path for the file within the bucket (required)
   /// - [description]: Optional description of the file
   /// - [tags]: Optional list of tags for organization
@@ -307,7 +296,7 @@ class Storage {
   /// final imageFile = await calljmp.storage.upload(
   ///   content: imageBytes,
   ///   contentType: MediaType('image', 'png'),
-  ///   bucketId: 'images',
+  ///   bucket: 'images',
   ///   key: 'gallery/photo1.png',
   ///   description: 'Holiday photo',
   ///   tags: ['vacation', '2023'],
@@ -316,7 +305,7 @@ class Storage {
   /// // Upload document from file path
   /// final document = await calljmp.storage.upload(
   ///   filePath: '/path/to/report.pdf',
-  ///   bucketId: 'documents',
+  ///   bucket: 'documents',
   ///   key: 'reports/monthly-report.pdf',
   ///   tags: ['report', 'monthly'],
   /// );
@@ -325,7 +314,7 @@ class Storage {
   /// final textFile = await calljmp.storage.upload(
   ///   content: 'Hello, world!',
   ///   contentType: MediaType('text', 'plain'),
-  ///   bucketId: 'text-files',
+  ///   bucket: 'text-files',
   ///   key: 'messages/hello.txt',
   /// );
   /// ```
@@ -333,7 +322,7 @@ class Storage {
     dynamic content,
     String? filePath,
     MediaType? contentType,
-    required String bucketId,
+    required String bucket,
     required String key,
     String? description,
     List<String>? tags,
@@ -382,7 +371,7 @@ class Storage {
     }
 
     return http
-        .request('${_config.serviceUrl}/data/$bucketId/$key')
+        .request('${_config.serviceUrl}/data/$bucket/$key')
         .use(http.context(_config))
         .use(http.access())
         .post(formData)
@@ -391,12 +380,12 @@ class Storage {
 
   /// Retrieves a file or its content from a storage bucket.
   Future<ByteStream> retrieve({
-    required String bucketId,
+    required String bucket,
     required String key,
     int? offset,
     int? length,
   }) => http
-      .request('${_config.serviceUrl}/data/$bucketId/$key')
+      .request('${_config.serviceUrl}/data/$bucket/$key')
       .use(http.context(_config))
       .use(http.access())
       .params({
@@ -406,32 +395,31 @@ class Storage {
       .get()
       .stream();
 
-  Future<BucketFile> peek({required String bucketId, required String key}) =>
-      http
-          .request('${_config.serviceUrl}/data/$bucketId/$key')
-          .use(http.context(_config))
-          .use(http.access())
-          .params({'peek': true})
-          .get()
-          .json((json) => BucketFile.fromJson(json));
+  Future<BucketFile> peek({required String bucket, required String key}) => http
+      .request('${_config.serviceUrl}/data/$bucket/$key')
+      .use(http.context(_config))
+      .use(http.access())
+      .params({'peek': true})
+      .get()
+      .json((json) => BucketFile.fromJson(json));
 
   /// Updates the metadata (description, tags) of a file in a storage bucket.
   Future<BucketFile> update({
-    required String bucketId,
+    required String bucket,
     required String key,
     String? description,
     List<String>? tags,
   }) => http
-      .request('${_config.serviceUrl}/data/$bucketId/$key')
+      .request('${_config.serviceUrl}/data/$bucket/$key')
       .use(http.context(_config))
       .use(http.access())
       .put({'description': description, 'tags': tags})
       .json((json) => BucketFile.fromJson(json));
 
   /// Deletes a file from a storage bucket.
-  Future<void> delete({required String bucketId, required String key}) async {
+  Future<void> delete({required String bucket, required String key}) async {
     await http
-        .request('${_config.serviceUrl}/data/$bucketId/$key')
+        .request('${_config.serviceUrl}/data/$bucket/$key')
         .use(http.context(_config))
         .use(http.access())
         .delete()
@@ -439,13 +427,13 @@ class Storage {
   }
 
   Future<({List<BucketFile> files, int? nextOffset})> list({
-    required String bucketId,
+    required String bucket,
     int offset = 0,
     int? limit,
     String? orderDirection,
     String? orderField,
   }) => http
-      .request('${_config.serviceUrl}/data/$bucketId/list')
+      .request('${_config.serviceUrl}/data/$bucket/list')
       .use(http.context(_config))
       .use(http.access())
       .params({
