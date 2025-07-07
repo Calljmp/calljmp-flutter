@@ -1,3 +1,16 @@
+## 0.0.6
+
+- **Real-time Features & Type Safety Improvements**
+  - Added comprehensive real-time database subscriptions with `database.observe()`
+  - Implemented real-time pub/sub messaging with `realtime.observe()`
+  - Enhanced type safety with event-specific observers and strongly-typed filters
+  - Added WebSocket communication layer with auto-reconnection
+  - Implemented type-safe filter system with sealed class hierarchy
+  - Added structured event data classes for database and realtime events
+  - Removed UUID dependency in favor of native platform UUID generation
+  - Comprehensive API cleanup and organization
+  - All lint warnings and compilation issues resolved
+
 ## 0.0.5
 
 - **Storage Enhancements**

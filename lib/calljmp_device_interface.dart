@@ -259,6 +259,28 @@ abstract class CalljmpDevice extends PlatformInterface {
     _instance = instance;
   }
 
+  /// Generates a UUID using native platform implementation.
+  ///
+  /// This method creates a universally unique identifier (UUID) using the
+  /// platform's native UUID generation capabilities. On iOS, it uses NSUUID,
+  /// and on Android, it uses java.util.UUID.
+  ///
+  /// Returns a [Future] that completes with a [String] representing the
+  /// generated UUID in standard format (e.g., "123e4567-e89b-12d3-a456-426614174000").
+  ///
+  /// **Platform Support**: All platforms (iOS, Android)
+  ///
+  /// Throws [UnimplementedError] if not overridden by platform implementation.
+  ///
+  /// Example:
+  /// ```dart
+  /// final uuid = await CalljmpDevice.instance.generateUuid();
+  /// print('Generated UUID: $uuid');
+  /// ```
+  Future<String> generateUuid() {
+    throw UnimplementedError('generateUuid() has not been implemented.');
+  }
+
   /// Generates a new Apple App Attestation key in the device's Secure Enclave.
   ///
   /// This method creates a new cryptographic key pair specifically for App Attestation

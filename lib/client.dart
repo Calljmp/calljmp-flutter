@@ -3,7 +3,9 @@ import 'package:calljmp/config.dart';
 import 'package:calljmp/database.dart';
 import 'package:calljmp/integrity.dart';
 import 'package:calljmp/project.dart';
+import 'package:calljmp/realtime.dart';
 import 'package:calljmp/service.dart';
+import 'package:calljmp/signal.dart';
 import 'package:calljmp/storage.dart';
 import 'package:calljmp/users/users.dart';
 
@@ -12,6 +14,7 @@ import 'package:calljmp/users/users.dart';
 /// This class serves as the entry point for the Calljmp SDK, providing access to:
 /// - User authentication and management
 /// - Database operations with direct SQLite access
+/// - Real-time database subscriptions and custom pub/sub messaging
 /// - Project configuration and management
 /// - Custom service endpoints
 /// - Local storage capabilities
@@ -43,8 +46,11 @@ class Calljmp {
   /// Provides project configuration and management.
   final Project project;
 
-  /// Provides direct SQLite database access.
+  /// Provides direct SQLite database access with real-time subscriptions.
   final Database database;
+
+  /// Provides real-time pub/sub messaging capabilities.
+  final Realtime realtime;
 
   /// Provides access to custom service endpoints.
   final Service service;
@@ -58,6 +64,7 @@ class Calljmp {
     this.users,
     this.project,
     this.database,
+    this.realtime,
     this.service,
     this.storage,
   );
@@ -114,12 +121,14 @@ class Calljmp {
       cloudProjectNumber: config.android?.cloudProjectNumber,
     );
     final integrity = Integrity(config, attestation);
+    final signal = createSignal(config);
 
     return Calljmp._(
       integrity,
       Users(config, attestation),
       Project(config, attestation),
-      Database(config),
+      Database(config, signal),
+      Realtime(signal),
       Service(config, integrity),
       Storage(config),
     );

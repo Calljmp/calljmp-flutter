@@ -22,8 +22,8 @@
 library;
 
 import 'dart:convert';
-import 'dart:io';
 import 'package:calljmp/calljmp_store_interface.dart';
+import 'package:calljmp/common.dart';
 import 'package:calljmp/config.dart';
 import 'package:calljmp/error.dart';
 import 'package:http/http.dart' as http;
@@ -123,13 +123,8 @@ class HttpClient extends http.BaseClient {
 /// ```
 HttpMiddleware context(Config config) =>
     (http.BaseRequest request, next) async {
-      request.headers["X-Calljmp-Platform"] = Platform.operatingSystem;
-
-      if (config.development?.enabled == true &&
-          config.development?.apiToken != null) {
-        request.headers["X-Calljmp-Api-Token"] = config.development!.apiToken!;
-      }
-
+      final values = await aggregateContext(config);
+      request.headers.addAll(values);
       return next(request);
     };
 
@@ -149,12 +144,8 @@ HttpMiddleware context(Config config) =>
 ///   .use([access()]);
 /// ```
 HttpMiddleware access() => (http.BaseRequest request, next) async {
-  final accessToken = await CalljmpStore.instance.get(
-    CalljmpStoreKey.accessToken,
-  );
-  if (accessToken != null) {
-    request.headers["Authorization"] = "Bearer $accessToken";
-  }
+  final values = await aggregateAccess();
+  request.headers.addAll(values);
 
   final response = await next(request);
 

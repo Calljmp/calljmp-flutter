@@ -37,6 +37,30 @@ class MethodChannelCalljmpDevice extends CalljmpDevice {
   @visibleForTesting
   final methodChannel = const MethodChannel('calljmp_device');
 
+  /// Generates a UUID using native platform implementation.
+  ///
+  /// This method creates a universally unique identifier (UUID) using the
+  /// platform's native UUID generation capabilities. On iOS, it uses NSUUID,
+  /// and on Android, it uses java.util.UUID.
+  ///
+  /// Returns a [Future] that completes with a [String] representing the
+  /// generated UUID in standard format (e.g., "123e4567-e89b-12d3-a456-426614174000").
+  ///
+  /// Throws:
+  /// - [PlatformException] if UUID generation fails
+  /// - [MissingPluginException] if the platform implementation is not available
+  ///
+  /// Example:
+  /// ```dart
+  /// final uuid = await device.generateUuid();
+  /// print('Generated UUID: $uuid');
+  /// ```
+  @override
+  Future<String> generateUuid() async {
+    final result = await methodChannel.invokeMethod<String>('generateUuid');
+    return result!;
+  }
+
   /// Generates an Apple App Attestation for a given key and challenge data.
   ///
   /// This method creates an attestation statement for the specified [keyId]

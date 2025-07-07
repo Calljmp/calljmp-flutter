@@ -9,6 +9,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import java.security.MessageDigest
+import java.util.UUID
 
 class CalljmpDevice private constructor(
     private val context: Context, private val channel: MethodChannel
@@ -38,6 +39,7 @@ class CalljmpDevice private constructor(
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "androidRequestIntegrityToken" -> requestIntegrityToken(call, result)
+            "generateUuid" -> generateUuid(result)
             else -> result.notImplemented()
         }
     }
@@ -76,6 +78,15 @@ class CalljmpDevice private constructor(
             }
         } catch (e: Exception) {
             result.error("IntegrityError", e.message, null)
+        }
+    }
+
+    private fun generateUuid(result: Result) {
+        try {
+            val uuid = UUID.randomUUID().toString()
+            result.success(uuid)
+        } catch (e: Exception) {
+            result.error("UuidError", "Failed to generate UUID", e.message)
         }
     }
 }

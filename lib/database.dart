@@ -1,5 +1,38 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:calljmp/config.dart';
 import 'package:calljmp/http.dart' as http;
+import 'package:calljmp/signal.dart';
+import 'package:calljmp/signal_types.dart';
+import 'package:calljmp/database_types.dart';
+
+// Re-export types from database_types.dart
+export 'package:calljmp/database_types.dart'
+    show
+        DatabaseRowId,
+        DatabaseRow,
+        DatabaseTable,
+        DatabaseSubscriptionEvent,
+        DatabaseFilter,
+        DatabaseEqFilter,
+        DatabaseNeFilter,
+        DatabaseGtFilter,
+        DatabaseGteFilter,
+        DatabaseLtFilter,
+        DatabaseLteFilter,
+        DatabaseInFilter,
+        DatabaseLikeFilter,
+        DatabaseAndFilter,
+        DatabaseOrFilter,
+        DatabaseNotFilter,
+        DatabaseInsertEventData,
+        DatabaseUpdateEventData,
+        DatabaseDeleteEventData,
+        DatabaseInsertHandler,
+        DatabaseUpdateHandler,
+        DatabaseDeleteHandler,
+        DatabaseObservePath,
+        databaseFilterToJson;
 
 /// Provides direct SQLite database access with no restrictions.
 ///
@@ -46,6 +79,12 @@ import 'package:calljmp/http.dart' as http;
 /// ```
 class Database {
   final Config _config;
+  final Signal _signal;
+
+  SignalLock? _signalLock;
+  final List<DatabaseSubscription> _subscriptions = [];
+
+  static const String _databaseComponent = 'database';
 
   /// Creates a new Database instance.
   ///
@@ -55,7 +94,8 @@ class Database {
   /// ## Parameters
   ///
   /// - [_config]: The SDK configuration containing API endpoints and settings
-  Database(this._config);
+  /// - [_signal]: Signal instance for managing real-time updates and events
+  Database(this._config, this._signal);
 
   /// Executes a SQL query against the database.
   ///
@@ -122,4 +162,301 @@ class Database {
           rows: json['rows'] as List<dynamic>,
         ),
       );
+
+  Future<void> _acquireSignalLock() async {
+    _signalLock ??=
+        _signal.findLock(_databaseComponent) ??
+        await _signal.acquireLock(_databaseComponent);
+  }
+
+  Future<void> _releaseSignalLock() async {
+    if (_signalLock != null) {
+      _signal.releaseLock(_signalLock!);
+      _signalLock = null;
+    }
+  }
+
+  /// Observe database changes for a specific table and event type with type safety.
+  ///
+  /// @param path - Table name followed by event type (e.g., "users.insert", "posts.update")
+  /// @returns A type-safe DatabaseObserver for setting up event handlers and subscriptions
+  ///
+  /// ## Example Insert Events
+  /// ```dart
+  /// final subscription = await db.observe<User>('users.insert')
+  ///   .onInsert((event) {
+  ///     for (final user in event.rows) {
+  ///       print('New user: ${user.name}');
+  ///     }
+  ///   })
+  ///   .filter(DatabaseGtFilter('age', 18))
+  ///   .subscribe();
+  /// ```
+  ///
+  /// ## Example Update Events
+  /// ```dart
+  /// final subscription = await db.observe<User>('users.update')
+  ///   .onUpdate((event) {
+  ///     for (final user in event.rows) {
+  ///       print('Updated user: ${user.name}');
+  ///     }
+  ///   })
+  ///   .subscribe();
+  /// ```
+  ///
+  /// ## Example Delete Events
+  /// ```dart
+  /// final subscription = await db.observe('users.delete')
+  ///   .onDelete((event) {
+  ///     print('Deleted user IDs: ${event.rowIds}');
+  ///   })
+  ///   .subscribe();
+  /// ```
+  DatabaseObserver<T> observe<T>(String path) {
+    final observePath = DatabaseObservePath(path);
+    return DatabaseObserver<T>._(
+      this,
+      observePath.table,
+      observePath.eventType,
+    );
+  }
+
+  Future<DatabaseSubscription> _subscribe<T>(
+    DatabaseSubscriptionOptions<T> options,
+  ) async {
+    final topic = 'database.${options.table}.${options.event.value}';
+    final subscriptionId = await Signal.messageId();
+    final subscription = DatabaseSubscriptionInternal(
+      topic,
+      options.table,
+      options.event,
+    );
+    _subscriptions.add(subscription);
+
+    // Declare handler variables first
+    late Future<SignalResult?> Function(SignalMessage) handleAck;
+    late Future<SignalResult?> Function(SignalMessage) handleError;
+    late Future<SignalResult?> Function(SignalMessage) handleData;
+    late Future<void> Function() removeSubscription;
+
+    // Define functions
+    handleData = (SignalMessage message) async {
+      if (!subscription.active) return null;
+
+      if (message is SignalDatabaseInsert && message.topic == topic) {
+        if (options.onInsert != null) {
+          try {
+            // Safer type casting with validation
+            final rows = message.rows.map((row) {
+              try {
+                return row as T;
+              } catch (e) {
+                debugPrint('Warning: Failed to cast row to type $T: $e');
+                return row; // Return as dynamic if casting fails
+              }
+            }).toList();
+
+            await options.onInsert!(
+              DatabaseInsertEventData(rows: rows.cast<T>()),
+            );
+          } catch (error) {
+            debugPrint(
+              'Error handling insert for table ${options.table}: $error',
+            );
+          }
+        }
+      } else if (message is SignalDatabaseUpdate && message.topic == topic) {
+        if (options.onUpdate != null) {
+          try {
+            // Safer type casting with validation
+            final rows = message.rows.map((row) {
+              try {
+                return row as T;
+              } catch (e) {
+                debugPrint('Warning: Failed to cast row to type $T: $e');
+                return row; // Return as dynamic if casting fails
+              }
+            }).toList();
+
+            await options.onUpdate!(
+              DatabaseUpdateEventData(rows: rows.cast<T>()),
+            );
+          } catch (error) {
+            debugPrint(
+              'Error handling update for table ${options.table}: $error',
+            );
+          }
+        }
+      } else if (message is SignalDatabaseDelete && message.topic == topic) {
+        if (options.onDelete != null) {
+          try {
+            await options.onDelete!(
+              DatabaseDeleteEventData(rowIds: message.rowIds),
+            );
+          } catch (error) {
+            debugPrint(
+              'Error handling delete for table ${options.table}: $error',
+            );
+          }
+        }
+      }
+
+      return null;
+    };
+
+    removeSubscription = () async {
+      _signal.off(SignalMessageType.ack, handleAck);
+      _signal.off(SignalMessageType.error, handleError);
+      _signal.off(SignalMessageType.data, handleData);
+
+      subscription._active = false;
+      _subscriptions.remove(subscription);
+
+      if (_subscriptions.isEmpty) {
+        await _releaseSignalLock();
+      }
+    };
+
+    handleAck = (SignalMessage message) async {
+      if (message is SignalMessageAck && message.id == subscriptionId) {
+        _signal.off(SignalMessageType.ack, handleAck);
+        _signal.off(SignalMessageType.error, handleError);
+        return SignalResult.handled;
+      }
+      return null;
+    };
+
+    handleError = (SignalMessage message) async {
+      if (message is SignalMessageError && message.id == subscriptionId) {
+        await removeSubscription();
+        return SignalResult.handled;
+      }
+      return null;
+    };
+
+    Future<void> unsubscribe() async {
+      try {
+        await _signal.send(
+          SignalDatabaseUnsubscribe(id: subscriptionId, topic: topic),
+        );
+      } catch (error) {
+        debugPrint(
+          'Failed to unsubscribe from table ${options.table} event ${options.event.value}: $error',
+        );
+      }
+    }
+
+    subscription._onUnsubscribe = () async {
+      await unsubscribe();
+      await removeSubscription();
+    };
+
+    _signal.on(SignalMessageType.ack, handleAck);
+    _signal.on(SignalMessageType.error, handleError);
+    _signal.on(SignalMessageType.data, handleData);
+
+    await _acquireSignalLock();
+    await _signal.send(
+      SignalDatabaseSubscribe(
+        id: subscriptionId,
+        topic: topic,
+        fields: options.fields,
+        filter: options.filter != null
+            ? databaseFilterToJson(options.filter!)
+            : null,
+      ),
+    );
+
+    return subscription;
+  }
+}
+
+/// Internal implementation of database subscription
+class DatabaseSubscriptionInternal implements DatabaseSubscription {
+  @override
+  final String topic;
+
+  @override
+  final DatabaseTable table;
+
+  @override
+  final DatabaseSubscriptionEvent event;
+
+  bool _active = true;
+  Future<void> Function()? _onUnsubscribe;
+
+  DatabaseSubscriptionInternal(this.topic, this.table, this.event);
+
+  @override
+  bool get active => _active;
+
+  @override
+  Future<void> unsubscribe() async {
+    if (_active) {
+      _active = false;
+      if (_onUnsubscribe != null) {
+        await _onUnsubscribe!();
+      }
+    }
+  }
+}
+
+/// Database observer for setting up event handlers and subscriptions with type safety
+class DatabaseObserver<T> {
+  final Database _database;
+  final DatabaseTable _table;
+  final DatabaseSubscriptionEvent _event;
+
+  List<String>? _fields;
+  DatabaseFilter? _filter;
+  DatabaseInsertHandler<T>? _insertHandler;
+  DatabaseUpdateHandler<T>? _updateHandler;
+  DatabaseDeleteHandler? _deleteHandler;
+
+  DatabaseObserver._(this._database, this._table, this._event);
+
+  /// Set up insert event handler with type safety
+  DatabaseObserver<T> onInsert(DatabaseInsertHandler<T> handler) {
+    _insertHandler = handler;
+    return this;
+  }
+
+  /// Set up update event handler with type safety
+  DatabaseObserver<T> onUpdate(DatabaseUpdateHandler<T> handler) {
+    _updateHandler = handler;
+    return this;
+  }
+
+  /// Set up delete event handler with type safety
+  DatabaseObserver<T> onDelete(DatabaseDeleteHandler handler) {
+    _deleteHandler = handler;
+    return this;
+  }
+
+  /// Set field projection for the subscription
+  DatabaseObserver<T> fields(List<String> fields) {
+    _fields = fields;
+    return this;
+  }
+
+  /// Set filter conditions with type safety
+  DatabaseObserver<T> filter(DatabaseFilter filter) {
+    _filter = filter;
+    return this;
+  }
+
+  /// Subscribe to database events with type safety
+  Future<DatabaseSubscription> subscribe() async {
+    return _database._subscribe(
+      DatabaseSubscriptionOptions<T>(
+        table: _table,
+        event: _event,
+        fields: _fields,
+        filter: _filter,
+        onInsert: _insertHandler,
+        onUpdate: _updateHandler,
+        onDelete: _deleteHandler,
+      ),
+    );
+  }
 }

@@ -30,6 +30,8 @@
     [self generateAttestationKey:call result:result];
   } else if ([@"appleAttestKey" isEqualToString:call.method]) {
     [self attestKey:call result:result];
+  } else if ([@"generateUuid" isEqualToString:call.method]) {
+    [self generateUuid:result];
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -98,6 +100,11 @@
                                message:@"Unsupported device check"
                                details:nil]);
   }
+}
+
+- (void)generateUuid:(FlutterResult)result {
+  NSString *uuid = [[NSUUID UUID] UUIDString];
+  result(uuid);
 }
 
 @end
