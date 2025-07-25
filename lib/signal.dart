@@ -68,7 +68,8 @@ class Signal {
       {};
   final Map<String, SignalLock> _locks = {};
   Timer? _autoDisconnectTimer;
-  static const int _autoDisconnectDelay = 60_000; // 60 seconds
+  Timer? _heartbeatTimer;
+  Future<void> _sendQueue = Future.value();
 
   Signal(this._config);
 
@@ -112,6 +113,7 @@ class Signal {
             _reconnectAttempts = 0;
             _reconnectDelay = 1000;
             _scheduleAutoDisconnect();
+            _scheduleHeartbeat();
             completeOnce();
           })
           .catchError((error) {
@@ -129,6 +131,7 @@ class Signal {
           final wasCleanClose = _channel?.closeCode == 1000;
           _channel = null;
           _clearAutoDisconnect();
+          _clearHeartbeat();
 
           if (!wasCleanClose && _reconnectAttempts < _maxReconnectAttempts) {
             _attemptReconnect();
@@ -145,18 +148,22 @@ class Signal {
   /// Disconnect from the Signal WebSocket
   Future<void> _disconnect() async {
     if (_channel != null) {
-      await _channel!.sink.close();
+      await _channel!.sink.close(1000, 'Client disconnect');
       _channel = null;
     }
     _clearAutoDisconnect();
+    _clearHeartbeat();
   }
 
   /// Send a message through the Signal connection
   Future<void> send<T extends SignalMessage>(T message) async {
-    if (_autoConnect && !connected && !connecting) {
-      await connect();
-    }
-    _send(message);
+    _sendQueue = _sendQueue.then((_) async {
+      if (_autoConnect && !connected && !connecting) {
+        await connect();
+      }
+      _send(message);
+    });
+    return _sendQueue;
   }
 
   void _send(SignalMessage message) {
@@ -279,17 +286,18 @@ class Signal {
   void _scheduleAutoDisconnect() {
     _clearAutoDisconnect();
 
-    if (connected && _locks.isEmpty) {
-      _autoDisconnectTimer = Timer(
-        Duration(milliseconds: _autoDisconnectDelay),
-        () {
-          if (connected && _locks.isEmpty) {
-            _disconnect().catchError((error) {
-              debugPrint('Auto-disconnect failed: $error');
-            });
-          }
-        },
-      );
+    final delay = _config.realtime?.autoDisconnectDelay == null
+        ? 60_000 // Default to 60 seconds
+        : _config.realtime!.autoDisconnectDelay! * 1000;
+
+    if (connected && _locks.isEmpty && delay > 0) {
+      _autoDisconnectTimer = Timer(Duration(milliseconds: delay), () {
+        if (connected && _locks.isEmpty) {
+          _disconnect().catchError((error) {
+            debugPrint('Auto-disconnect failed: $error');
+          });
+        }
+      });
     }
   }
 
@@ -298,9 +306,45 @@ class Signal {
     _autoDisconnectTimer = null;
   }
 
+  void _scheduleHeartbeat() {
+    _clearHeartbeat();
+
+    final interval = _config.realtime?.heartbeatInterval == null
+        ? 0
+        : _config.realtime!.heartbeatInterval! * 1000;
+
+    if (connected && interval > 0) {
+      _heartbeatTimer = Timer.periodic(Duration(milliseconds: interval), (_) {
+        if (connected) {
+          _heartbeat().catchError((error) {
+            debugPrint('Heartbeat failed: $error');
+            _disconnect().catchError((error) {
+              debugPrint('Failed to disconnect after heartbeat error: $error');
+            });
+          });
+        }
+      });
+    }
+  }
+
+  void _clearHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+  }
+
+  Future<void> _heartbeat() async {
+    await send(SignalMessagePing(id: await messageId()));
+  }
+
   /// Dispose of the Signal instance
   Future<void> dispose() async {
-    // Complete any pending connection with an error
+    // Wait for send queue to complete, ignoring errors
+    try {
+      await _sendQueue;
+    } catch (e) {
+      // Ignore send errors during disposal
+    }
+
     if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
       _connectionCompleter!.completeError(Exception('Signal disposed'));
       _connectionCompleter = null;
@@ -310,6 +354,8 @@ class Signal {
     _messageHandlers.clear();
     _locks.clear();
     _clearAutoDisconnect();
+    _clearHeartbeat();
+    _sendQueue = Future.value();
   }
 }
 

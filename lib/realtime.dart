@@ -304,7 +304,7 @@ class RealtimeObserver<T> {
     return this;
   }
 
-  /// Set up event handlers with type safety
+  /// Set up event handlers with enum-based events
   ///
   /// ## Example
   /// ```dart

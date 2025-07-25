@@ -1,3 +1,9 @@
+## 0.0.7
+
+- **Enhanced Real-time & Observer API Improvements**
+  - Added configurable heartbeat functionality and auto-disconnect settings
+  - Implemented sequential message sending queue for better reliability
+
 ## 0.0.6
 
 - **Real-time Features & Type Safety Improvements**

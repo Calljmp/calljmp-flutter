@@ -42,6 +42,29 @@ typedef DevelopmentConfig = ({
   String? apiToken,
 });
 
+/// Real-time configuration options.
+///
+/// Contains settings for real-time WebSocket connections including
+/// heartbeat intervals and auto-disconnect delays.
+///
+/// ## Example
+///
+/// ```dart
+/// final config = RealtimeConfig(
+///   autoDisconnectDelay: 60, // 60 seconds
+///   heartbeatInterval: 30,   // 30 seconds
+/// );
+/// ```
+typedef RealtimeConfig = ({
+  /// Auto-disconnect delay in seconds when no locks are held.
+  /// Set to 0 to disable auto-disconnect. Defaults to 60 seconds.
+  int? autoDisconnectDelay,
+
+  /// Heartbeat interval in seconds for keep-alive ping messages.
+  /// Set to 0 to disable heartbeat. Defaults to 0 (disabled).
+  int? heartbeatInterval,
+});
+
 /// SDK configuration options for Calljmp Flutter SDK.
 ///
 /// This class contains all the configuration parameters needed to initialize
@@ -79,6 +102,12 @@ class Config {
   /// and authentication tokens for testing purposes.
   final DevelopmentConfig? development;
 
+  /// Real-time connection configuration.
+  ///
+  /// Contains settings for WebSocket connections including heartbeat
+  /// intervals and auto-disconnect delays.
+  final RealtimeConfig? realtime;
+
   /// Creates a new instance of the [Config] class.
   ///
   /// ## Parameters
@@ -88,11 +117,13 @@ class Config {
   /// - [service]: Optional custom service configuration
   /// - [android]: Optional Android-specific settings
   /// - [development]: Optional development environment settings
+  /// - [realtime]: Optional real-time connection settings
   const Config({
     required this.projectUrl,
     required this.serviceUrl,
     this.service,
     this.android,
     this.development,
+    this.realtime,
   });
 }

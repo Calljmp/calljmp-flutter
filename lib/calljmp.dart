@@ -105,7 +105,6 @@ export 'database_types.dart'
         // Subscription management
         DatabaseSubscription,
         DatabaseSubscriptionOptions,
-        DatabaseObservePath,
         // Utility functions
         databaseFilterToJson;
 

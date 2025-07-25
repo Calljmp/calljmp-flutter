@@ -6,22 +6,27 @@
 [![GitHub license](https://img.shields.io/github/license/Calljmp/calljmp-flutter)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-Compatible-blue)](https://flutter.dev/)
 
-## 🚀 Overview
+## Overview
 
-Calljmp is a **secure backend designed for mobile developers**, providing:
+**Calljmp** is a secure backend-as-a-service designed for mobile developers. The **Flutter SDK** provides seamless integration with Calljmp services for your Flutter applications.
 
-- ✅ **Authentication** via **App Attestation (iOS)** and **Play Integrity (Android)**
-- ✅ **Full SQLite database access** (no restrictions, run raw SQL)
-- ✅ **Secure file storage** with organized bucket management
-- ✅ **Dynamic permissions** for users & roles
-- ✅ **Flutter SDK** for seamless integration
+### Key Features
 
-🔹 **Website**: [calljmp.com](https://calljmp.com)  
-🔹 **Follow**: [@calljmpdev](https://x.com/calljmpdev)
+- **Authentication** via **App Attestation (iOS)** and **Play Integrity (Android)**
+- **Full SQLite database access** with no restrictions - run raw SQL
+- **Secure cloud storage** with organized bucket management
+- **Real-time database subscriptions** for live data updates
+- **Dynamic permissions** for users & roles
+- **OAuth integration** (Apple, Google, and more)
+- **Custom service endpoints** for your business logic
+
+**Website**: [calljmp.com](https://calljmp.com)  
+**Documentation**: [docs.calljmp.com](https://docs.calljmp.com)  
+**Follow**: [@calljmpdev](https://x.com/calljmpdev)
 
 ---
 
-## 📦 Installation
+## Installation
 
 Add the SDK to your `pubspec.yaml`:
 
@@ -38,11 +43,9 @@ flutter pub get
 
 ---
 
-## 🛠️ Setup & Usage
+## Getting Started
 
-### 1️⃣ Initialize Calljmp
-
-Import and initialize Calljmp in your Flutter app:
+Initialize Calljmp in your Flutter app and start using its features:
 
 ```dart
 import 'package:calljmp/calljmp.dart';
@@ -50,167 +53,27 @@ import 'package:calljmp/calljmp.dart';
 final calljmp = Calljmp();
 ```
 
-### 2️⃣ Authenticate User
+### Available Features
 
-Authenticate a user with Calljmp:
+- **User Authentication**: Email/password, OAuth providers (Apple, Google)
+- **Database Operations**: Direct SQLite queries, real-time subscriptions
+- **Cloud Storage**: File upload, download, metadata management
+- **Custom Services**: Call your own backend endpoints
+- **Security**: App Attestation and Play Integrity verification
 
-```dart
-final user = await calljmp.users.auth.email.authenticate(
-  email: "test@email.com",
-  name: "Tester",
-  password: "password",
-  policy: UserAuthenticationPolicy.signInOrCreate,
-  tags: ["role:member"],
-);
+For detailed usage examples, API reference, and comprehensive guides, visit our [documentation](https://docs.calljmp.com).
 
-print(user);
-```
+## Security & App Attestation
 
-### 3️⃣ Run Direct SQL Queries
+Calljmp doesn't use API keys. Instead, it relies on **App Attestation (iOS)** and **Play Integrity (Android)** to verify that only legitimate apps can communicate with the backend.
 
-Access your SQLite database without restrictions:
+Learn more about security in our [documentation](https://docs.calljmp.com/security).
 
-```dart
-final result = await calljmp.database.query(
-  sql: 'SELECT id, email, auth_provider, provider_user_id, tags, created_at FROM users',
-);
-
-print(result);
-```
-
-### 4️⃣ File Storage & Management
-
-Calljmp provides secure cloud storage for your files with organized bucket management. Upload, download, and manage files with metadata, tags, and access controls.
-
-```dart
-// Upload a file from bytes
-final file = await calljmp.storage.upload(
-  content: imageBytes,
-  contentType: MediaType('image', 'jpeg'),
-  bucketId: 'user-uploads',
-  key: 'profile/avatar.jpg',
-  description: 'User profile picture',
-  tags: ['profile', 'avatar'],
-);
-
-// Upload from file path
-final document = await calljmp.storage.upload(
-  filePath: '/path/to/document.pdf',
-  bucketId: 'documents',
-  key: 'contracts/agreement.pdf',
-  tags: ['legal', 'contract'],
-);
-
-// Upload text content
-final textFile = await calljmp.storage.upload(
-  content: 'Hello, world!',
-  contentType: MediaType('text', 'plain'),
-  bucketId: 'text-files',
-  key: 'messages/hello.txt',
-);
-```
-
-#### List Files in a Bucket
-
-```dart
-final result = await calljmp.storage.list(
-  bucketId: 'user-uploads',
-  limit: 50,
-  offset: 0,
-  orderField: 'createdAt',
-  orderDirection: 'desc',
-);
-
-print('Found ${result.files.length} files');
-for (final file in result.files) {
-  print('${file.key}: ${file.size} bytes, created ${file.createdAt}');
-}
-```
-
-#### Download Files
-
-```dart
-// Get file metadata without downloading content
-final fileInfo = await calljmp.storage.peek(
-  bucketId: 'user-uploads',
-  key: 'profile/avatar.jpg',
-);
-print('File size: ${fileInfo.size} bytes');
-
-// Download file content
-final stream = await calljmp.storage.retrieve(
-  bucketId: 'user-uploads',
-  key: 'profile/avatar.jpg',
-);
-
-// Convert to bytes for processing
-final bytes = await stream.toBytes();
-```
-
-#### Update File Metadata
-
-```dart
-final updatedFile = await calljmp.storage.update(
-  bucketId: 'user-uploads',
-  key: 'profile/avatar.jpg',
-  description: 'Updated profile picture',
-  tags: ['profile', 'avatar', 'updated'],
-);
-```
-
-#### Delete Files
-
-```dart
-await calljmp.storage.delete(
-  bucketId: 'user-uploads',
-  key: 'profile/avatar.jpg',
-);
-```
-
-### 5️⃣ Access service
-
-If you are deploying your own service, you can access it via the `service` property.
-
-```typescript
-// ./src/services/main.ts
-
-import { Service } from './service';
-
-const service = Service();
-
-service.get('/hello', async c => {
-  return c.json({
-    message: 'Hello, world!',
-  });
-});
-
-export default service;
-```
-
-Then in your Flutter app, you can call the service like this:
-
-```dart
-// ./lib/main.dart
-
-final message = await calljmp.service
-  .request(route: "/hello")
-  .get()
-  .json((json) => json['message'] as String);
-
-print(message);
-```
-
-## 🔒 Security & App Attestation
-
-Calljmp does not use API keys. Instead, it relies on App Attestation (iOS) and Play Integrity (Android) to verify that only legitimate apps can communicate with the backend.
-
-For more details, check the [Apple App Attestations docs](https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity) and/or [Google Play Integrity docs](https://developer.android.com/google/play/integrity).
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 💬 Support & Community
+## Support & Community
 
 If you have any questions or feedback:
 

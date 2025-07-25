@@ -42,10 +42,10 @@ class DatabaseUpdateEventData<T> extends DatabaseEventData {
 }
 
 /// Database delete event data
-class DatabaseDeleteEventData extends DatabaseEventData {
-  final List<DatabaseRowId> rowIds;
+class DatabaseDeleteEventData<T> extends DatabaseEventData {
+  final List<T> rows;
 
-  const DatabaseDeleteEventData({required this.rowIds});
+  const DatabaseDeleteEventData({required this.rows});
 }
 
 /// Type-safe event handlers for database operations
@@ -186,7 +186,6 @@ Map<String, dynamic> databaseFilterToJson(DatabaseFilter filter) {
 /// Database subscription options with type safety
 class DatabaseSubscriptionOptions<T> {
   final DatabaseTable table;
-  final DatabaseSubscriptionEvent event;
   final List<String>? fields;
   final DatabaseFilter? filter;
   final DatabaseInsertHandler<T>? onInsert;
@@ -195,7 +194,6 @@ class DatabaseSubscriptionOptions<T> {
 
   const DatabaseSubscriptionOptions({
     required this.table,
-    required this.event,
     this.fields,
     this.filter,
     this.onInsert,
@@ -204,34 +202,9 @@ class DatabaseSubscriptionOptions<T> {
   });
 }
 
-// Removed specific observer interfaces - use generic DatabaseObserver instead
-
 /// Database subscription interface
 abstract class DatabaseSubscription {
   bool get active;
-  String get topic;
   DatabaseTable get table;
-  DatabaseSubscriptionEvent get event;
   Future<void> unsubscribe();
 }
-
-/// Path-based type inference for database observers
-extension type DatabaseObservePath._(String path) implements String {
-  DatabaseObservePath(this.path) {
-    final parts = path.split('.');
-    if (parts.length != 2) {
-      throw ArgumentError('Path must be in format "table.event"');
-    }
-    if (!['insert', 'update', 'delete'].contains(parts[1])) {
-      throw ArgumentError('Invalid event type: ${parts[1]}');
-    }
-  }
-
-  String get table => path.split('.')[0];
-  String get event => path.split('.')[1];
-
-  DatabaseSubscriptionEvent get eventType =>
-      DatabaseSubscriptionEvent.values.firstWhere((e) => e.value == event);
-}
-
-// Removed DatabaseObserverFactory - use Database.observe() method instead
